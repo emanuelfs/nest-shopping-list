@@ -69,11 +69,15 @@ nest new nest-shopping-list
 ```
 
 ```bash
-nest generate resource item
+cd nest-shopping-list
 ```
 
 ```bash
 npm install --save @nestjs/typeorm typeorm mysql2 @nestjs/config class-validator class-transformer @nestjs/swagger swagger-ui-express
+```
+
+```bash
+nest generate resource item
 ```
 
 File ".env"
