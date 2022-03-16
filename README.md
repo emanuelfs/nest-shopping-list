@@ -58,6 +58,207 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+## Help
+
+```bash
+npm install -g @nestjs/cli
+```
+
+```bash
+nest new nest-shopping-list
+```
+
+```bash
+nest generate resource item
+```
+
+```bash
+npm install --save @nestjs/typeorm typeorm mysql2 @nestjs/config class-validator class-transformer @nestjs/swagger swagger-ui-express
+```
+
+File ".env"
+
+```
+SERVER_PORT=3000
+MODE=DEV
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_USERNAME=meet_pet_dbo
+DB_PASSWORD=P@ssw0rd
+DB_DATABASE=meet_pet
+DB_SYNCHRONIZE=true
+```
+
+File "src/app.module.ts"
+
+```javascript
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { ItemModule } from './item/item.module';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot(),
+    TypeOrmModule.forRoot({
+      type: 'mysql',
+      host: process.env.DB_HOST,
+      port: parseInt(process.env.DB_PORT),
+      username: process.env.DB_USERNAME,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_DATABASE,
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
+      synchronize: (process.env.DB_SYNCHRONIZE === 'true'),
+    }),
+    ItemModule
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule { }
+```
+
+File "src/item/entities/item.entity.ts"
+
+```javascript
+import { BaseEntity, Column, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+
+@Entity()
+export class Item extends BaseEntity {
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
+
+    @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
+    updatedAt: Date;
+
+    @Column({ name: 'name', type: 'varchar', length: 50 })
+    name: string;
+
+    @Column({ name: 'description', type: 'varchar', nullable: true, length: 255 })
+    description?: string;
+
+    @Column({ name: 'quantity', type: 'int' })
+    quantity: number;
+}
+```
+
+File "src/item/dto/create-item.dto.ts"
+
+```javascript
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
+
+export class CreateItemDto {
+    @ApiProperty({ example: 'Bananas' })
+    @IsString()
+    @IsNotEmpty()
+    name: string;
+
+    @ApiPropertyOptional({ example: 'Cavendish bananas', description: 'Optional description of the item' })
+    @IsOptional()
+    @IsString()
+    description: string;
+
+    @ApiProperty({ example: 5, description: 'Needed quantity' })
+    @IsInt()
+    @Min(0)
+    quantity: number;
+}
+```
+
+File "src/main.ts"
+
+```javascript
+import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  app.useGlobalPipes(new ValidationPipe());
+
+  const config = new DocumentBuilder()
+    .setTitle('Shopping list API')
+    .setDescription('My shopping list API description')
+    .setVersion('1.0')
+    .build();
+
+  SwaggerModule.setup('api', app, SwaggerModule.createDocument(app, config));
+
+  await app.listen(3000);
+}
+
+bootstrap();
+```
+
+File "src/item/item.service.ts"
+
+```javascript
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { CreateItemDto } from './dto/create-item.dto';
+import { UpdateItemDto } from './dto/update-item.dto';
+import { Item } from './entities/item.entity';
+
+@Injectable()
+export class ItemService {
+  constructor(@InjectRepository(Item) private readonly repository: Repository<Item>) { }
+
+  create(createItemDto: CreateItemDto): Promise<Item> {
+    const item = this.repository.create(createItemDto);
+    return this.repository.save(item);
+  }
+
+  findAll(): Promise<Item[]> {
+    return this.repository.find();
+  }
+
+  findOne(id: string): Promise<Item> {
+    return this.repository.findOne(id);
+  }
+
+  async update(id: string, updateItemDto: UpdateItemDto): Promise<Item> {
+    const item = await this.repository.preload({
+      id: id,
+      ...updateItemDto,
+    });
+    if (!item) {
+      throw new NotFoundException(`Item ${id} not found`);
+    }
+    return this.repository.save(item);
+  }
+
+  async remove(id: string) {
+    const item = await this.findOne(id);
+    return this.repository.remove(item);
+  }
+}
+```
+
+File "src/item/item.module.ts"
+
+```javascript
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Item } from './entities/item.entity';
+import { ItemService } from './item.service';
+import { ItemController } from './item.controller';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([Item])],
+  controllers: [ItemController],
+  providers: [ItemService]
+})
+export class ItemModule { }
+```
+
+Reference: https://www.sidechannel.blog/en/creating-an-api-with-nestjs/index.html
+
 ## Support
 
 Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
