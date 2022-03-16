@@ -97,16 +97,16 @@ File "src/app.module.ts"
 
 ```javascript
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config'; //add this line
+import { TypeOrmModule } from '@nestjs/typeorm'; //add this line
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ItemModule } from './item/item.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
-    TypeOrmModule.forRoot({
+    ConfigModule.forRoot(), //add this line
+    TypeOrmModule.forRoot({ //add this block
       type: 'mysql',
       host: process.env.DB_HOST,
       port: parseInt(process.env.DB_PORT),
@@ -127,10 +127,10 @@ export class AppModule { }
 File "src/item/entities/item.entity.ts"
 
 ```javascript
-import { BaseEntity, Column, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BaseEntity, Column, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";  //add this line
 
-@Entity()
-export class Item extends BaseEntity {
+@Entity() //add this line
+export class Item extends BaseEntity { //add this block
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
@@ -151,10 +151,10 @@ export class Item extends BaseEntity {
 File "src/item/dto/create-item.dto.ts"
 
 ```javascript
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';  //add this line
+import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';  //add this line
 
-export class CreateItemDto {
+export class CreateItemDto { //add this block
     @ApiProperty({ example: 'Bananas' })
     @IsString()
     @IsNotEmpty()
@@ -175,23 +175,23 @@ export class CreateItemDto {
 File "src/main.ts"
 
 ```javascript
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common'; //add this line
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'; //add this line
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe()); //add this line
 
-  const config = new DocumentBuilder()
-    .setTitle('Shopping list API')
-    .setDescription('My shopping list API description')
-    .setVersion('1.0')
-    .build();
+  const config = new DocumentBuilder() //add this line
+    .setTitle('Shopping list API') //add this line
+    .setDescription('My shopping list API description') //add this line
+    .setVersion('1.0') //add this line
+    .build(); //add this line
 
-  SwaggerModule.setup('api', app, SwaggerModule.createDocument(app, config));
+  SwaggerModule.setup('api', app, SwaggerModule.createDocument(app, config)); //add this line
 
   await app.listen(3000);
 }
@@ -202,44 +202,44 @@ bootstrap();
 File "src/item/item.service.ts"
 
 ```javascript
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Injectable, NotFoundException } from '@nestjs/common'; //edit this line
+import { InjectRepository } from '@nestjs/typeorm'; //add this line
+import { Repository } from 'typeorm'; //add this line
 import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
-import { Item } from './entities/item.entity';
+import { Item } from './entities/item.entity'; //add this line
 
 @Injectable()
 export class ItemService {
-  constructor(@InjectRepository(Item) private readonly repository: Repository<Item>) { }
+  constructor(@InjectRepository(Item) private readonly repository: Repository<Item>) { } //add this line
 
-  create(createItemDto: CreateItemDto): Promise<Item> {
-    const item = this.repository.create(createItemDto);
-    return this.repository.save(item);
+  create(createItemDto: CreateItemDto): Promise<Item> { //edit this line
+    const item = this.repository.create(createItemDto); //add this line
+    return this.repository.save(item); //edit this line
   }
 
-  findAll(): Promise<Item[]> {
-    return this.repository.find();
+  findAll(): Promise<Item[]> { //edit this line
+    return this.repository.find(); //edit this line
   }
 
-  findOne(id: string): Promise<Item> {
-    return this.repository.findOne(id);
+  findOne(id: string): Promise<Item> { //edit this line
+    return this.repository.findOne(id); //edit this line
   }
 
-  async update(id: string, updateItemDto: UpdateItemDto): Promise<Item> {
-    const item = await this.repository.preload({
-      id: id,
-      ...updateItemDto,
-    });
-    if (!item) {
-      throw new NotFoundException(`Item ${id} not found`);
-    }
-    return this.repository.save(item);
+  async update(id: string, updateItemDto: UpdateItemDto): Promise<Item> { //edit this line
+    const item = await this.repository.preload({ //add this line
+      id: id, //add this line
+      ...updateItemDto, //add this line
+    }); //add this line
+    if (!item) { //add this line
+      throw new NotFoundException(`Item ${id} not found`); //add this line
+    } //add this line
+    return this.repository.save(item); //edit this line
   }
 
-  async remove(id: string) {
-    const item = await this.findOne(id);
-    return this.repository.remove(item);
+  async remove(id: string) { //edit this line
+    const item = await this.findOne(id); //add this line
+    return this.repository.remove(item); //edit this line
   }
 }
 ```
@@ -248,13 +248,13 @@ File "src/item/item.module.ts"
 
 ```javascript
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Item } from './entities/item.entity';
+import { TypeOrmModule } from '@nestjs/typeorm'; //add this line
+import { Item } from './entities/item.entity'; //add this line
 import { ItemService } from './item.service';
 import { ItemController } from './item.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Item])],
+  imports: [TypeOrmModule.forFeature([Item])], //add this line
   controllers: [ItemController],
   providers: [ItemService]
 })
